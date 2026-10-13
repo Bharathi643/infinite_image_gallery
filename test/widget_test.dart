@@ -1,18 +1,14 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:infinite_image_gallery/main.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    await tester.pumpWidget(const MyApp());
+  testWidgets('Shows configuration error when configuration is unavailable',
+      (WidgetTester tester) async {
+    await tester.pumpWidget(
+      const ImageGalleryApp(configurationError: true),
+    );
 
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
-    
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
-
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    expect(find.text('Configuration unavailable'), findsOneWidget);
+    expect(find.text('Infinite Image Gallery'), findsOneWidget);
   });
 }
