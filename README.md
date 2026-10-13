@@ -1,88 +1,126 @@
 # Infinite Image Gallery — Flutter + Pixabay
 
-Flutter assessment starter project with Pixabay API integration.
+A Flutter image gallery application built with the Pixabay API. The app supports image discovery, keyword search, infinite scrolling, image details, locally persisted favorites, and downloading images to the device gallery.
 
 ## Features
-- Responsive, cached image grid
-- Pixabay keyword search and page-based infinite scrolling
-- Loading, empty, and error states; retry and pull-to-refresh
-- Image detail page with tags, user, resolution, likes and views
-- Favorites persisted locally with SharedPreferences
-- Download image to the device gallery with `gal`
-- Provider / ChangeNotifier state management
+
+- Responsive image grid with image caching.
+- Pixabay keyword search.
+- Page-based pagination and infinite scrolling.
+- Loading, empty, and error states.
+- Retry and pull-to-refresh.
+- Image detail screen with available image metadata.
+- Favorites persisted locally using SharedPreferences.
+- Download images to the device gallery using `gal`.
+- Provider / ChangeNotifier state management.
+
+## Tech Stack
+
+- Flutter and Dart
+- Pixabay API
+- Provider
+- SharedPreferences
+- Dio
+- Gal
+
+## Prerequisites
+
+- Flutter SDK compatible with the project's `pubspec.yaml`.
+- Android Studio or VS Code.
+- An Android emulator or physical Android device.
+- A Pixabay API key.
 
 ## Setup
-1. Install Flutter SDK (Dart 3.3+) and Android Studio or Xcode.
-2. Extract this ZIP and open the folder in VS Code / Android Studio.
-3. In the project folder, generate platform folders and fetch dependencies:
+
+1. Clone the repository and open the project directory.
+2. Install dependencies:
+
    ```bash
-   flutter create .
    flutter pub get
    ```
-4. Get your Pixabay key from https://pixabay.com/api/docs/.
-5. Run the app with your key (replace `YOUR_ACTUAL_KEY`):
 
-   Windows PowerShell / CMD, macOS or Linux:
+3. Obtain an API key from the [Pixabay API documentation](https://pixabay.com/api/docs/).
+4. Create a `.env` file in the project root, following the configuration expected by the application:
+
+   ```env
+   PIXABAY_API_KEY=YOUR_ACTUAL_KEY
+   ```
+
+5. Run the application:
+
    ```bash
-   flutter run --dart-define=PIXABAY_API_KEY=YOUR_ACTUAL_KEY
+   flutter run
    ```
 
-6. Build an APK:
-   ```bash
-   flutter build apk --release --dart-define=PIXABAY_API_KEY=YOUR_ACTUAL_KEY
-   ```
-   Output is usually `build/app/outputs/flutter-apk/app-release.apk`.
+If the project requires platform files to be generated because they are missing, run `flutter create .` before fetching dependencies. Do not run it unnecessarily over an existing platform configuration.
 
-## Android internet permission
-Check `android/app/src/main/AndroidManifest.xml`. Directly inside the `<manifest>` element, ensure:
-```xml
-<uses-permission android:name="android.permission.INTERNET" />
-```
-Check current `gal` package instructions for platform-specific gallery permission/configuration. Test download behavior on a real device.
+## Architecture
 
-## Structure
-```text
-lib/
-  main.dart
-  models/photo.dart
-  services/pixabay_service.dart
-  providers/gallery_provider.dart
-  providers/favorites_provider.dart
-  screens/gallery_screen.dart
-  screens/detail_screen.dart
-  screens/favorites_screen.dart
-  widgets/photo_grid.dart
+- `models/` — photo data model and JSON mapping.
+- `services/` — Pixabay API communication.
+- `providers/` — gallery state, pagination, and favorites state.
+- `screens/` — gallery, image details, and favorites screens.
+- `widgets/` — reusable UI components.
+
+The application uses Provider / ChangeNotifier to manage state and separate API communication, state management, and UI components.
+
+## Run Tests
+
+Run the static analyzer:
+
+```bash
+flutter analyze
 ```
 
-## API key safety
-The key is not included in this ZIP. `--dart-define` keeps it out of the source file, but a key embedded in a mobile app can still be extracted. Do not commit it to a public repository; use a backend proxy for stronger production protection.
+Run the test suite:
 
-## Notes
-Pixabay enforces API usage limits. This is a starter implementation, not a prebuilt APK. Test dependencies, platform permissions, pagination, favorites and downloads on your target device before submission. Consider adding more unit/widget tests, retry/backoff and download progress.
+```bash
+flutter test
+```
 
+Latest verified local results: no analyzer issues and 15 tests passed. Re-run both commands after any subsequent changes.
 
-## Windows Gradle memory-crash fix
+## Build an Android APK
 
-The provided crash log reported `insufficient memory ... Native memory allocation` with Gradle configured as `-Xmx8G` and `MaxMetaspaceSize=4G`. This project includes reduced Gradle memory limits (`-Xmx2G`, metaspace `1G`) and only two Gradle workers.
+```bash
+flutter build apk --release
+```
 
-1. Extract this ZIP. Folder name: **`infinite_image_gallery`**.
-2. Open Command Prompt in that folder. Close Android Studio and other memory-heavy apps for the first build.
-3. Run:
+Expected output:
 
-   ```bat
-   flutter create .
-   flutter clean
-   if exist android\.gradle rmdir /s /q android\.gradle
-   flutter pub get
-   flutter run --dart-define=PIXABAY_API_KEY=YOUR_ACTUAL_KEY
-   ```
+`build/app/outputs/flutter-apk/app-release.apk`
 
-   Replace `YOUR_ACTUAL_KEY` with your own Pixabay key. Keep it private and do not put it in source code.
-4. If it still crashes, restart Windows and retry; make sure Windows virtual memory/page file is enabled and system-managed. Do not set the Gradle heap back to 8G.
-5. Release APK:
+Verify that the API key is configured correctly for the application's actual configuration before building and testing the release APK.
 
-   ```bat
-   flutter build apk --release --dart-define=PIXABAY_API_KEY=YOUR_ACTUAL_KEY
-   ```
+## API Key Safety
 
-This ZIP contains Flutter source, not a prebuilt APK. `flutter create .` generates platform files for the installed Flutter SDK. If Android files already exist, verify `android/gradle.properties` matches the memory settings included in this ZIP.
+Do not commit `.env` or any file containing a real API key. Ensure `.env` is listed in `.gitignore`.
+
+A key bundled in a mobile application can still be extracted, even when it is stored in an environment file or supplied at build time. For production applications, consider using a backend proxy and appropriate usage restrictions.
+
+## Assumptions, Limitations & Incomplete Features
+
+### Assumptions
+
+- Pixabay is the source of gallery images and metadata.
+- An internet connection is required to fetch images and search results.
+- Some metadata may not be available for every image.
+
+### Limitations
+
+- Image availability and API responses depend on Pixabay.
+- API usage limits may affect requests.
+- Image downloads and permissions can behave differently across Android versions and devices.
+
+### Incomplete Features and Verification
+
+- Document any features that are not implemented.
+- Document any known bugs or limitations.
+- Confirm download permissions, image saving, pagination, and favorites persistence on a real device before submission.
+- If no known incomplete features remain after verification, state that explicitly.
+
+## Windows Gradle Memory Troubleshooting
+
+If Gradle fails because of native memory allocation, check `android/gradle.properties` and use memory settings appropriate for your machine. Avoid setting an excessively large Gradle heap on a low-memory system.
+
+Close memory-intensive applications and ensure Windows virtual memory is enabled. If the issue persists, inspect the complete Gradle error before changing build configuration.
