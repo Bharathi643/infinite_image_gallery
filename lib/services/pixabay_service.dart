@@ -33,7 +33,8 @@ class PixabayService {
     int perPage = _defaultPageSize,
   }) async {
     if (page < 1) {
-      throw const PixabayException('The page number must be greater than zero.');
+      throw const PixabayException(
+          'The page number must be greater than zero.');
     }
 
     if (perPage < 3 || perPage > 200) {

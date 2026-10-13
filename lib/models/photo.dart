@@ -1,4 +1,3 @@
-
 class Photo {
   const Photo({
     required this.id,

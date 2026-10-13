@@ -22,8 +22,7 @@ Future<void> main() async {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(
-          create: (_) => GalleryProvider(PixabayService())
-            ..fetchFirstPage(),
+          create: (_) => GalleryProvider(PixabayService())..fetchFirstPage(),
         ),
         ChangeNotifierProvider(
           create: (_) => FavoritesProvider()..load(),

@@ -5,10 +5,15 @@ build/
 .vscode/
 *.iml
 .DS_Store
+
 .env
+
+.flutter-plugins
 .flutter-plugins-dependencies
+
+coverage/
+
 android/local.properties
 android/.gradle/
 android/.kotlin/
 android/hs_err_pid*.log
-test.zip

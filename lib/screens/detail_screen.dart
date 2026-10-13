@@ -1,5 +1,5 @@
 import 'dart:typed_data';
-import 'package:cached_network_image/cached_network_image.dart';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:gal/gal.dart';
@@ -7,6 +7,9 @@ import 'package:provider/provider.dart';
 
 import '../models/photo.dart';
 import '../providers/favorites_provider.dart';
+import '../widgets/detail_download_button.dart';
+import '../widgets/photo_info_card.dart';
+import '../widgets/photo_preview.dart';
 
 class DetailScreen extends StatefulWidget {
   const DetailScreen({
@@ -22,17 +25,18 @@ class DetailScreen extends StatefulWidget {
 
 class _DetailScreenState extends State<DetailScreen> {
   late final Dio _dio;
+
   bool _downloading = false;
   bool _favoriteActionInProgress = false;
 
   @override
   void initState() {
     super.initState();
+
     _dio = Dio(
       BaseOptions(
         connectTimeout: const Duration(seconds: 15),
         receiveTimeout: const Duration(seconds: 30),
-        sendTimeout: const Duration(seconds: 15),
         responseType: ResponseType.bytes,
       ),
     );
@@ -53,7 +57,7 @@ class _DetailScreenState extends State<DetailScreen> {
         : photo.imageUrl.trim();
 
     if (imageUrl.isEmpty) {
-      _showMessage('The image URL is unavailable.', isError: true);
+      _showMessage('Image URL is unavailable.', isError: true);
       return;
     }
 
@@ -64,7 +68,7 @@ class _DetailScreenState extends State<DetailScreen> {
       final data = response.data;
 
       if (data == null || data.isEmpty) {
-        _showMessage('The image could not be downloaded.', isError: true);
+        _showMessage('Image could not be downloaded.', isError: true);
         return;
       }
 
@@ -76,7 +80,7 @@ class _DetailScreenState extends State<DetailScreen> {
 
       if (!hasAccess) {
         _showMessage(
-          'Gallery access is required to save images.',
+          'Gallery permission was denied. Allow access to save images.',
           isError: true,
         );
         return;
@@ -93,18 +97,19 @@ class _DetailScreenState extends State<DetailScreen> {
         DioExceptionType.connectionTimeout ||
         DioExceptionType.sendTimeout ||
         DioExceptionType.receiveTimeout =>
-          'The request timed out. Please try again.',
+          'Request timed out. Please try again.',
         DioExceptionType.connectionError =>
           'Unable to connect. Check your internet connection.',
-        DioExceptionType.badResponse =>
-          'The image server returned an error.',
-        _ => 'The image could not be downloaded. Please try again.',
+        DioExceptionType.badResponse => 'The image server returned an error.',
+        _ => 'Image download failed. Please try again.',
       };
 
       _showMessage(message, isError: true);
+    } on GalException catch (error) {
+      _showMessage(error.type.message, isError: true);
     } catch (_) {
       _showMessage(
-        'Unable to save the image. Please check gallery permissions.',
+        'Unable to save the image. Please try again.',
         isError: true,
       );
     } finally {
@@ -150,15 +155,14 @@ class _DetailScreenState extends State<DetailScreen> {
   void _showMessage(String message, {bool isError = false}) {
     if (!mounted) return;
 
-    ScaffoldMessenger.of(context)
+    final messenger = ScaffoldMessenger.of(context);
+    messenger
       ..hideCurrentSnackBar()
       ..showSnackBar(
         SnackBar(
           content: Text(message),
           behavior: SnackBarBehavior.floating,
-          backgroundColor: isError
-              ? Theme.of(context).colorScheme.error
-              : null,
+          backgroundColor: isError ? Theme.of(context).colorScheme.error : null,
         ),
       );
   }
@@ -168,9 +172,7 @@ class _DetailScreenState extends State<DetailScreen> {
     final photo = widget.photo;
     final favorites = context.watch<FavoritesProvider>();
     final isFavorite = favorites.isFavorite(photo.id);
-    final imageUrl = photo.largeImageUrl.trim().isNotEmpty
-        ? photo.largeImageUrl.trim()
-        : photo.imageUrl.trim();
+    final theme = Theme.of(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -181,131 +183,41 @@ class _DetailScreenState extends State<DetailScreen> {
             onPressed: _favoriteActionInProgress ? null : _toggleFavorite,
             icon: _favoriteActionInProgress
                 ? const SizedBox(
-                    width: 20,
-                    height: 20,
+                    width: 22,
+                    height: 22,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
                 : Icon(
                     isFavorite ? Icons.favorite : Icons.favorite_border,
+                    color: isFavorite ? theme.colorScheme.error : null,
                   ),
           ),
+          const SizedBox(width: 8),
         ],
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(16),
-            child: AspectRatio(
-              aspectRatio: photo.width > 0 && photo.height > 0
-                  ? photo.width / photo.height
-                  : 4 / 3,
-              child: imageUrl.isEmpty
-                  ? const Center(
-                      child: Icon(Icons.broken_image_outlined, size: 48),
-                    )
-                  : CachedNetworkImage(
-                      imageUrl: imageUrl,
-                      fit: BoxFit.contain,
-                      placeholder: (context, url) => const Center(
-                        child: CircularProgressIndicator(),
-                      ),
-                      errorWidget: (context, url, error) => const Center(
-                        child: Icon(
-                          Icons.broken_image_outlined,
-                          size: 48,
-                        ),
-                      ),
-                    ),
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+          children: [
+            PhotoPreview(photo: photo),
+            const SizedBox(height: 20),
+            PhotoInfoCard(photo: photo),
+            const SizedBox(height: 20),
+            DetailDownloadButton(
+              isDownloading: _downloading,
+              onPressed: _download,
             ),
-          ),
-          const SizedBox(height: 16),
-          FilledButton.icon(
-            onPressed: _downloading ? null : _download,
-            icon: _downloading
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.download),
-            label: Text(
-              _downloading ? 'Downloading...' : 'Download Image',
+            const SizedBox(height: 16),
+            Text(
+              'Image information is provided by Pixabay. '
+              'Some details may not be available for every image.',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
             ),
-          ),
-          const SizedBox(height: 20),
-          Text(
-            photo.tags.trim().isEmpty ? 'Untitled Image' : photo.tags,
-            style: Theme.of(context).textTheme.titleLarge,
-          ),
-          const SizedBox(height: 12),
-          _DetailRow(
-            icon: Icons.person_outline,
-            label: 'Uploaded by',
-            value: photo.user,
-          ),
-          _DetailRow(
-            icon: Icons.photo_size_select_large_outlined,
-            label: 'Resolution',
-            value: photo.width > 0 && photo.height > 0
-                ? '${photo.width} × ${photo.height}'
-                : 'Not available',
-          ),
-          _DetailRow(
-            icon: Icons.favorite_border,
-            label: 'Likes',
-            value: photo.likes.toString(),
-          ),
-          _DetailRow(
-            icon: Icons.visibility_outlined,
-            label: 'Views',
-            value: photo.views.toString(),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'Image information is provided by the Pixabay API. Some details may not be available for every image.',
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _DetailRow extends StatelessWidget {
-  const _DetailRow({
-    required this.icon,
-    required this.label,
-    required this.value,
-  });
-
-  final IconData icon;
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, size: 20),
-          const SizedBox(width: 12),
-          SizedBox(
-            width: 105,
-            child: Text(
-              label,
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

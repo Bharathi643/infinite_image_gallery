@@ -1,4 +1,3 @@
-
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -19,8 +18,7 @@ class FavoritesProvider extends ChangeNotifier {
   bool get hasLoaded => _hasLoaded;
   String? get errorMessage => _errorMessage;
 
-  List<Photo> get favorites =>
-      List<Photo>.unmodifiable(_favorites.values);
+  List<Photo> get favorites => List<Photo>.unmodifiable(_favorites.values);
 
   int get count => _favorites.length;
 
