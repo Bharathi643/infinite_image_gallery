@@ -1,4 +1,3 @@
-```dart
 import 'dart:async';
 import 'dart:convert';
 
@@ -148,4 +147,3 @@ class PixabayException implements Exception {
   @override
   String toString() => message;
 }
-```
